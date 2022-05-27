@@ -44,7 +44,12 @@ class Exporter:
         page_id = page["id"]
     
         # see if there are any children
-        child_ids = self.__confluence.get_child_id_list(page_id)
+        # child_ids = self.__confluence.get_child_id_list(page_id) THIS COMMAND DOESN'T WORK
+        # I reimplement this function below!
+        children = self.__confluence.get("/rest/api/content/" + page_id + "/child/page?next=true&limit=1000&start=0")
+        child_ids = []
+        for child in children['results']: child_ids.append(child['id'])
+        # end reimplementation
     
         content = page["body"]["storage"]["value"]
 
@@ -101,11 +106,7 @@ class Exporter:
         for space in ret["results"]:
             space_key = space["key"]
             print("Processing space", space_key)
-            if space.get("homepage") is None:
-                print("Skipping space: {}, no homepage found!".format(space_key))
-                print("In order for this tool to work there has to be a root page!")
-                raise ExportException("No homepage found")
-            else:
+            if (space_key == "QDRI"):
                 # homepage found, recurse from there
                 homepage_id = space["homepage"]["id"]
                 self.__dump_page(homepage_id, parents=[space_key])
